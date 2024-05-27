@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { addBook } from "../../redux/slices/booksSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { FaSpinner } from "react-icons/fa";
+import { addBook, fetchBook, selectIsloadingViaAPI } from "../../redux/slices/booksSlice";
+import { setError } from "../../redux/slices/errorSlice";
 import createBookWithID from "../../utils/createBookWithID";
 import booksData from "../../data/books.json";
 import "./BookForm.css";
@@ -8,23 +10,31 @@ import "./BookForm.css";
 const BookForm = () => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
-  const dispatch = useDispatch();
+	const isLoadingViaAPI = useSelector(selectIsloadingViaAPI)
+	const dispatch = useDispatch();
 
   const handleAddRandomBook = () => {
     const randomIndex = Math.floor(Math.random() * booksData.length);
     const randomBook = booksData[randomIndex];
-    dispatch(addBook(createBookWithID(randomBook)));
+    dispatch(addBook(createBookWithID(randomBook, "random")));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (title && author) {
-      const book = createBookWithID({title, author})
+      const book = createBookWithID({ title, author }, "manual");
       dispatch(addBook(book));
       setTitle("");
       setAuthor("");
+    } else {
+      dispatch(setError("You must fill Title and Author"));
     }
+  };
+
+  const handleAddRandomBookViaAPI = () => {
+		dispatch (fetchBook("http://localhost:4000/random-book-delayed"))
+
   };
 
   return (
@@ -52,6 +62,21 @@ const BookForm = () => {
         <button type="submit">Add Book</button>
         <button type="button" onClick={handleAddRandomBook}>
           Add Random
+        </button>
+
+        <button
+          type="button"
+          onClick={handleAddRandomBookViaAPI}
+          disabled={isLoadingViaAPI}
+        >
+          {isLoadingViaAPI ? (
+            <>
+              <span>Loading Book...</span>
+              <FaSpinner className="spinner" />
+            </>
+          ) : (
+            "Add Random via API"
+          )}
         </button>
       </form>
     </div>
